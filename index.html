@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorkforcePro Employee Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="loginView" class="auth-page">
+    <div class="auth-panel">
+      <div class="auth-brand">
+        <div>
+          <h1>WorkforcePro</h1>
+          <p>Employee Management System</p>
+        </div>
+      </div>
+
+      <div class="auth-card">
+        <span class="eyebrow">Secure access</span>
+        <h2>Welcome back</h2>
+        <p class="">Choose a role and enter the credentials.</p>
+
+        <form id="loginForm">
+          <label>
+            Role
+            <select id="loginRole" required>
+              <option value="hr">HR Administrator</option>
+              <option value="director">Department Director</option>
+              <option value="employee">Employee</option>
+            </select>
+          </label>
+
+          <label>
+            Email
+            <input id="loginEmail" type="email" autocomplete="username" required>
+          </label>
+
+          <label>
+            Password
+            <div class="password-wrap">
+              <input id="loginPassword" type="password" autocomplete="current-password" required>
+              <button type="button" id="togglePassword" class="icon-btn" aria-label="Show password">Show</button>
+            </div>
+          </label>
+
+          <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+          <p id="loginError" class="form-error"></p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="appView" class="app hidden">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark small">WP</div>
+        <div>
+          <strong>WorkforcePro</strong>
+          <span>EMS</span>
+        </div>
+      </div>
+
+      <nav id="mainNav" class="nav-list">
+        <button class="nav-link active" data-section="dashboard">
+          <span>▦</span> Dashboard
+        </button>
+        <button class="nav-link hr-only director-only" data-section="employees">
+          <span>👥</span> Employees
+        </button>
+        <button class="nav-link" data-section="attendance">
+          <span>✓</span> Attendance
+        </button>
+        <button class="nav-link" data-section="leaves">
+          <span>📅</span> Leave
+        </button>
+        <button class="nav-link" data-section="payroll">
+          <span>💳</span> Payroll
+        </button>
+        <button class="nav-link" data-section="performance">
+          <span>📈</span> Performance
+        </button>
+        <button class="nav-link hr-only" data-section="departments">
+          <span>🏢</span> Departments
+        </button>
+        <button class="nav-link" data-section="profile">
+          <span>👤</span> My Profile
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-mini">
+          <div id="sidebarAvatar" class="avatar">HR</div>
+          <div>
+            <strong id="sidebarUserName">HR Administrator</strong>
+            <span id="sidebarUserRole">HR</span>
+          </div>
+        </div>
+        <button style="color: white;" id="logoutBtn" class="btn btn-ghost btn-block">Log out</button>
+      </div>
+    </aside>
+    <button id="sidebarOverlay" class="sidebar-overlay" aria-label="Close navigation"></button>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="menuBtn" class="icon-btn mobile-menu" aria-label="Open menu">☰</button>
+          <div>
+            <h1 id="pageTitle">Dashboard</h1>
+            <p id="currentDate"></p>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="search-box">
+            <span>⌕</span>
+            <input id="globalSearch" type="search" placeholder="Search employees">
+          </div>
+          <button id="themeBtn" class="icon-btn" aria-label="Toggle theme">☾</button>
+          <div id="notificationShell" class="notification-shell">
+            <button id="notificationBtn" class="notification-btn" aria-label="Notifications" aria-expanded="false" aria-controls="notificationPanel">🔔<span id="notificationCount">0</span></button>
+            <div id="notificationPanel" class="notification-panel hidden">
+              <div class="notification-panel-header">
+                <div>
+                  <strong>Notifications</strong>
+                  <p id="notificationSubtitle">Live updates from the system</p>
+                </div>
+                <button id="notificationMarkReadBtn" class="text-btn" type="button">Mark all read</button>
+              </div>
+              <div id="notificationList" class="notification-list"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+        <section id="dashboardSection" class="section active">
+          <div class="welcome-card">
+            <div>
+              <span class="eyebrow">Employee operations</span>
+              <h2 id="welcomeTitle">Welcome back</h2>
+              <p>Review your workforce activity, attendance, requests, and performance.</p>
+            </div>
+            <button id="quickAddEmployee" class="btn btn-light hr-only">+ Add employee</button>
+          </div>
+
+          <div id="statCards" class="stats-grid"></div>
+
+          <div class="dashboard-grid">
+            <article class="card chart-card">
+              <div class="card-header">
+                <div>
+                  <h3>Attendance overview</h3>
+                  <p>This week's workforce activity</p>
+                </div>
+                <select id="attendanceRange">
+                  <option>This week</option>
+                  <option>This month</option>
+                </select>
+              </div>
+              <div id="attendanceChart" class="bar-chart"></div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Department distribution</h3>
+                  <p>Employees by department</p>
+                </div>
+              </div>
+              <div id="departmentDistribution" class="progress-list"></div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Recent employees</h3>
+                  <p>Latest additions to the workforce</p>
+                </div>
+                <button class="text-btn hr-only director-only" data-go="employees">View all</button>
+              </div>
+              <div id="recentEmployees" class="people-list"></div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Leave requests</h3>
+                  <p>Requests awaiting action</p>
+                </div>
+                <button class="text-btn" data-go="leaves">View all</button>
+              </div>
+              <div id="dashboardLeaveList" class="request-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="employeesSection" class="section">
+          <div class="section-toolbar">
+            <div>
+              <h2>Employees</h2>
+              <p>Manage employee information and assignments.</p>
+            </div>
+            <div class="toolbar-actions">
+              <button id="exportEmployeesBtn" class="btn btn-ghost hr-only director-only">⇩ Export to Excel</button>
+              <button id="addEmployeeBtn" class="btn btn-primary hr-only">+ Add employee</button>
+            </div>
+          </div>
+
+          <div class="filter-row card">
+            <input id="employeeSearch" type="search" placeholder="Search by name, email or ID">
+            <select id="departmentFilter">
+              <option value="">All departments</option>
+            </select>
+            <select id="statusFilter">
+              <option value="">All status</option>
+              <option value="Active">Active</option>
+              <option value="On Leave">On Leave</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+            <button id="clearEmployeeFilters" class="btn btn-ghost">Clear</button>
+          </div>
+
+          <div class="table-card">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>ID</th>
+                    <th>Department</th>
+                    <th>Position</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="employeeTableBody"></tbody>
+              </table>
+            </div>
+            <div id="employeeEmpty" class="empty-state hidden">No employees match your filters.</div>
+          </div>
+        </section>
+
+        <section id="attendanceSection" class="section">
+          <div class="section-toolbar">
+            <div>
+              <h2>Attendance</h2>
+              <p>Track daily check-in and check-out records.</p>
+            </div>
+            <button id="checkInBtn" class="btn btn-primary">Check in</button>
+          </div>
+
+          <div id="attendanceSummary" class="stats-grid compact"></div>
+
+          <div class="table-card">
+            <div class="card-header table-header">
+              <div>
+                <h3>Attendance records</h3>
+                <p>Current employee attendance status</p>
+              </div>
+              <input id="attendanceDate" type="date">
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Date</th>
+                    <th>Check in</th>
+                    <th>Check out</th>
+                    <th>Hours</th>
+                    <th>Status</th>
+                    <th class="hr-only director-only">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="attendanceTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="leavesSection" class="section">
+          <div class="section-toolbar">
+            <div>
+              <h2>Leave management</h2>
+              <p>Submit, review, and manage employee leave requests.</p>
+            </div>
+            <button id="requestLeaveBtn" class="btn btn-primary">+ Request leave</button>
+          </div>
+
+          <div id="leaveSummary" class="stats-grid compact"></div>
+
+          <div class="table-card">
+            <div class="card-header table-header">
+              <div>
+                <h3>Leave requests</h3>
+                <p>All submitted leave applications</p>
+              </div>
+              <select id="leaveStatusFilter">
+                <option value="">All status</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Type</th>
+                    <th>Dates</th>
+                    <th>Days</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="leaveTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="payrollSection" class="section">
+          <div class="section-toolbar">
+            <div>
+              <h2>Payroll</h2>
+              <p>Calculate salaries, deductions, and net pay.</p>
+            </div>
+            <div class="action-menu hr-only">
+              <button id="exportPayrollBtn" class="btn btn-ghost">⇩ Export payroll to Excel</button>
+              <button id="runPayrollBtn" class="btn btn-primary">Run payroll</button>
+            </div>
+          </div>
+
+          <div id="payrollSummary" class="stats-grid compact"></div>
+
+          <div class="table-card">
+            <div class="card-header table-header">
+              <div>
+                <h3>Payroll register</h3>
+                <p id="payrollPeriod">Current period</p>
+              </div>
+              <select id="payrollMonth"></select>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Basic salary</th>
+                    <th>Allowances</th>
+                    <th>Deductions</th>
+                    <th>Net pay</th>
+                    <th>Status</th>
+                    <th>Payslip</th>
+                  </tr>
+                </thead>
+                <tbody id="payrollTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="performanceSection" class="section">
+          <div class="section-toolbar">
+            <div>
+              <h2>Performance</h2>
+              <p>Review goals, ratings, and employee progress.</p>
+            </div>
+            <button id="addReviewBtn" class="btn btn-primary hr-only director-only">+ Add review</button>
+          </div>
+
+          <div class="performance-layout">
+            <div id="performanceCards" class="performance-grid"></div>
+            <article class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Top performers</h3>
+                  <p>Highest ratings in the current cycle</p>
+                </div>
+              </div>
+              <div id="topPerformers" class="ranking-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="departmentsSection" class="section">
+          <div class="section-toolbar">
+            <div>
+              <h2>Departments</h2>
+              <p>Manage organizational departments and leaders.</p>
+            </div>
+            <button id="addDepartmentBtn" class="btn btn-primary hr-only">+ Add department</button>
+          </div>
+
+          <div id="departmentCards" class="department-grid"></div>
+        </section>
+
+        <section id="profileSection" class="section">
+          <div class="profile-layout">
+            <article class="card profile-card">
+              <div class="profile-photo-wrap">
+                <div id="profileAvatar" class="profile-avatar"><img src="" alt=""></div>
+                <img id="profilePhoto" class="profile-photo hidden" alt="Profile picture">
+              </div>
+              <h2 id="profileName">Samuel Maduot</h2>
+              <p id="profilePosition">IT Support Officer</p>
+              <span id="profileStatus" class="badge success">Active</span>
+
+              <div class="profile-details">
+                <div><span>Employee ID</span><strong id="profileEmployeeId">EMP-001</strong></div>
+                <div><span>Department</span><strong id="profileDepartment">Information Technology</strong></div>
+                <div><span>Email</span><strong id="profileEmail">employee@workforcepro.com</strong></div>
+                <div><span>Phone</span><strong id="profilePhone">+211 920 000 000</strong></div>
+                <div><span>Joined</span><strong id="profileJoined">10 Jan 2024</strong></div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Personal information</h3>
+                  <p>Update your contact and profile details.</p>
+                </div>
+              </div>
+
+              <form id="profileForm" class="form-grid">
+                <label class="full profile-picture-field">
+                  Profile picture
+                  <div class="profile-picture-controls">
+                    <input id="profilePictureInput" type="file" accept="image/png,image/jpeg,image/webp">
+                    <button id="removeProfilePictureBtn" class="btn btn-outline" type="button">Remove picture</button>
+                  </div>
+                  <small>PNG, JPG or WebP. Images are resized and saved in this browser.</small>
+                </label>
+                <label>Full name<input id="profileNameInput" required></label>
+                <label>Email<input id="profileEmailInput" type="email" required></label>
+                <label>Phone<input id="profilePhoneInput" required></label>
+                <label>Position<input id="profilePositionInput" required></label>
+                <label class="full">Address<input id="profileAddressInput" placeholder="Juba, South Sudan"></label>
+                <div class="full form-actions">
+                  <button class="btn btn-primary" type="submit">Save changes</button>
+                </div>
+              </form>
+
+              <div class="card-header" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line);">
+                <div>
+                  <h3>Security</h3>
+                  <p>Change your password from the default value.</p>
+                </div>
+              </div>
+
+              <form id="passwordForm" class="form-grid">
+                <label>Current password<input id="currentPasswordInput" type="password" autocomplete="current-password" required></label>
+                <label>New password<input id="newPasswordInput" type="password" autocomplete="new-password" required></label>
+                <label class="full">Confirm new password<input id="confirmPasswordInput" type="password" autocomplete="new-password" required></label>
+                <div class="full form-actions">
+                  <button class="btn btn-primary" type="submit">Change password</button>
+                </div>
+              </form>
+            </article>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop hidden">
+    <div id="modal" class="modal">
+      <div class="modal-header">
+        <div>
+          <h2 id="modalTitle">Add employee</h2>
+          <p id="modalSubtitle">Enter the required information.</p>
+        </div>
+        <button id="closeModalBtn" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

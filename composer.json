@@ -1,0 +1,30 @@
+
+{
+    "name": "workforcepro/ems",
+    "description": "WorkforcePro Employee Management System - PHP Implementation",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "WorkforcePro Team",
+            "email": "info@workforcepro.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "WorkforcePro\\": "src/"
+        },
+        "files": [
+            "src/config/Config.php",
+            "src/config/Database.php",
+            "src/middleware/CORS.php",
+            "src/middleware/Auth.php",
+            "src/Router.php",
+            "src/controllers/Controller.php",
+            "src/models/Model.php"
+        ]
+    }
+}
