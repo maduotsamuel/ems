@@ -267,7 +267,7 @@ function renderDashboard() {
 
   renderDepartmentDistribution();
 
-  const recent = [...scopedEmployees].sort((a,b) => b.joined.localeCompare(a.joined)).slice(0,4);
+  const recent = [...scopedEmployees].sort((a,b) => getRecruitedDate(b).localeCompare(getRecruitedDate(a))).slice(0,4);
   $("#recentEmployees").innerHTML = recent.map(personRow).join("");
 
   const pending = scopedLeaves.filter(l => l.status === "Pending").slice(0,4);
@@ -333,7 +333,8 @@ function exportEmployeesToExcel() {
       <td>${escapeCell(e.department)}</td>
       <td>${escapeCell(e.position)}</td>
       <td>${escapeCell(e.status)}</td>
-      <td>${escapeCell(formatDate(e.joined))}</td>
+      <td>${escapeCell(formatDate(getRecruitedDate(e)))}</td>
+      <td>${escapeCell(formatDateOrDash(getContractEndDate(e)))}</td>
       <td>${escapeCell(e.salary)}</td>
       <td>${escapeCell(e.address || "")}</td>
     </tr>`).join("");
@@ -356,7 +357,7 @@ function exportEmployeesToExcel() {
       <thead>
         <tr>
           <th>Employee ID</th><th>Full Name</th><th>Email</th><th>Phone</th>
-          <th>Department</th><th>Position</th><th>Status</th><th>Joined Date</th>
+          <th>Department</th><th>Position</th><th>Status</th><th>Date Recruited</th><th>Contract End</th>
           <th>Monthly Salary (USD)</th><th>Address</th>
         </tr>
       </thead>
@@ -394,7 +395,8 @@ function renderEmployees() {
       <td>${e.department}</td>
       <td>${e.position}</td>
       <td>${badge(e.status)}</td>
-      <td>${formatDate(e.joined)}</td>
+      <td>${formatDate(getRecruitedDate(e))}</td>
+      <td>${formatDateOrDash(getContractEndDate(e))}</td>
       <td><div class="action-menu">
         <button class="action-btn" onclick="viewEmployee('${e.id}')">View</button>
         ${currentUser.role === "hr" ? `<button class="action-btn" onclick="openEmployeeModal('${e.id}')">Edit</button><button class="action-btn" onclick="deleteEmployee('${e.id}')">Delete</button>` : ""}
@@ -432,7 +434,8 @@ function openEmployeeModal(id = null) {
       <label>Department<select name="department" required>${state.departments.map(d => `<option ${employee?.department === d.name ? "selected" : ""}>${d.name}</option>`).join("")}</select></label>
       <label>Position<input name="position" value="${employee?.position || ""}" required></label>
       <label>Status<select name="status">${["Active","On Leave","Inactive"].map(s => `<option ${employee?.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
-      <label>Joined date<input name="joined" type="date" value="${employee?.joined || todayISO()}" required></label>
+      <label>Date recruited<input name="dateRecruited" type="date" value="${getRecruitedDate(employee)}" required></label>
+      <label>Contract end date<input name="contractEndDate" type="date" value="${getContractEndDate(employee)}"></label>
       <label>Monthly salary<input name="salary" type="number" min="0" value="${employee?.salary || 1000}" required></label>
       <label class="full">Address<input name="address" value="${employee?.address || "Juba, South Sudan"}"></label>
       <div class="modal-actions full">
@@ -449,15 +452,18 @@ function saveEmployee(e) {
   const form = new FormData(e.target);
   const values = Object.fromEntries(form.entries());
   values.salary = Number(values.salary);
+  values.dateRecruited = values.dateRecruited || todayISO();
+  values.joined = values.dateRecruited;
+  values.contractEndDate = values.contractEndDate || "";
 
   if (editingEmployeeId) {
     const index = state.employees.findIndex(e => e.id === editingEmployeeId);
-    state.employees[index] = { ...state.employees[index], ...values };
+    state.employees[index] = normalizeEmployeeDates({ ...state.employees[index], ...values });
     syncEmployeeUser(state.employees[index]);
     toast("Employee updated.");
   } else {
     const next = Math.max(0, ...state.employees.map(e => Number(e.id.split("-")[1]))) + 1;
-    const employee = { ...values, id: `EMP-${String(next).padStart(3,"0")}` };
+    const employee = normalizeEmployeeDates({ ...values, id: `EMP-${String(next).padStart(3,"0")}` });
     state.employees.push(employee);
     state.performance.push({ employeeId: employee.id, rating: 0, goal: 0, note: "No review recorded." });
     createEmployeeLogin(employee);
@@ -478,7 +484,8 @@ function viewEmployee(id) {
       <div><span>Email</span><strong>${e.email}</strong></div>
       <div><span>Phone</span><strong>${e.phone}</strong></div>
       <div><span>Status</span><strong>${e.status}</strong></div>
-      <div><span>Joined</span><strong>${formatDate(e.joined)}</strong></div>
+      <div><span>Date recruited</span><strong>${formatDate(getRecruitedDate(e))}</strong></div>
+      <div><span>Contract end</span><strong>${formatDateOrDash(getContractEndDate(e))}</strong></div>
       <div><span>Salary</span><strong>${money(e.salary)}</strong></div>
       <div><span>Address</span><strong>${e.address || "-"}</strong></div>
     </div>
@@ -946,7 +953,8 @@ function renderProfile() {
   $("#profileDepartment").textContent = e.department;
   $("#profileEmail").textContent = e.email;
   $("#profilePhone").textContent = e.phone;
-  $("#profileJoined").textContent = formatDate(e.joined);
+  $("#profileJoined").textContent = formatDate(getRecruitedDate(e));
+  $("#profileContractEnd").textContent = formatDateOrDash(getContractEndDate(e));
   $("#profileNameInput").value = e.name;
   $("#profileEmailInput").value = e.email;
   $("#profilePhoneInput").value = e.phone;
@@ -1157,6 +1165,7 @@ function handleStorageSync(event) {
 
 function normalizeState(rawState) {
   const nextState = { ...rawState };
+  nextState.employees = Array.isArray(nextState.employees) ? nextState.employees.map(normalizeEmployeeDates) : [];
   nextState.users = Array.isArray(nextState.users) ? nextState.users : [];
   nextState.notificationReads = Array.isArray(nextState.notificationReads) ? nextState.notificationReads : [];
 
@@ -1440,6 +1449,26 @@ function markNotificationsAsRead(ids, persist = true) {
 function getEmployee(id) { return state.employees.find(e => e.id === id); }
 function getPerformance(id) { return state.performance.find(p => p.employeeId === id); }
 
+function normalizeEmployeeDates(employee) {
+  const recruited = employee?.dateRecruited || employee?.joined || todayISO();
+  return {
+    ...employee,
+    dateRecruited: recruited,
+    joined: employee?.joined || recruited,
+    contractEndDate: employee?.contractEndDate || ""
+  };
+}
+
+function getRecruitedDate(employee) {
+  if (!employee) return todayISO();
+  return employee.dateRecruited || employee.joined || todayISO();
+}
+
+function getContractEndDate(employee) {
+  if (!employee) return "";
+  return employee.contractEndDate || "";
+}
+
 function getScopedEmployees() {
   if (!currentUser) return [];
 
@@ -1471,7 +1500,13 @@ function badge(status) {
 function initials(name) { return name.split(" ").map(n => n[0]).slice(0,2).join("").toUpperCase(); }
 function titleCase(text) { return text.charAt(0).toUpperCase() + text.slice(1); }
 function average(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
-function formatDate(date) { return new Date(date + "T00:00:00").toLocaleDateString("en", { day:"2-digit", month:"short", year:"numeric" }); }
+function formatDate(date) {
+  if (!date) return "-";
+  return new Date(date + "T00:00:00").toLocaleDateString("en", { day:"2-digit", month:"short", year:"numeric" });
+}
+function formatDateOrDash(date) {
+  return date ? formatDate(date) : "-";
+}
 function money(value) { return new Intl.NumberFormat("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 }).format(value); }
 
 function daysBetween(start, end) {
